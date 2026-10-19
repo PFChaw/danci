@@ -42,55 +42,6 @@ python -m http.server 8080
 
 想局域网里用手机看：`python -m http.server 8080 --bind 0.0.0.0`，手机访问 `http://<电脑内网IP>:8080`（同一 WiFi，放行防火墙）。
 
----
-
-## 部署到 Cloudflare Pages（连 GitHub，push 即更新）
-
-### 1. 把仓库推上去
-
-**懒人版**：解压后在 PowerShell 里跑（会自动 init / commit / push）
-
-```powershell
-powershell -ExecutionPolicy Bypass -File push-to-github.ps1 -Repo https://github.com/<你的用户名>/<仓库名>.git
-```
-
-或者手动：
-
-```bash
-# 解压本包到任意目录，然后
-git init -b main
-git add .
-git commit -m "背单词工具：纯静态版"
-git remote add origin https://github.com/<你的用户名>/<仓库名>.git
-git push -u origin main
-```
-
-### 2. 在 Cloudflare 里连仓库
-
-1. 打开 https://dash.cloudflare.com → 左侧 **Workers & Pages** → **Create application**
-2. 选 **Connect GitHub**（新版界面在 “Make something new” 里，也可能叫 *Import an existing Git repository*；**不是** “Upload your static files”）
-3. 授权 Cloudflare 访问你的 GitHub，选中刚推的仓库 → **Begin setup**
-4. 构建设置：
-
-   | 项 | 填什么 |
-   |---|---|
-   | Framework preset | `None` |
-   | Build command | **留空** |
-   | Build output directory | `/`（就是仓库根目录） |
-   | 环境变量 | 不需要 |
-
-5. **Save and Deploy**，一两分钟后得到 `https://<项目名>.pages.dev`
-
-### 3. 以后更新
-
-改完 `git push`，Cloudflare 自动重新发布，网址不变。
-
-> 想绑定自己的域名：Pages → Custom domains。挂在 Cloudflare 上的域名不需要备案；只有「域名 + 中国大陆服务器」才需要。
-
-### 备选：不连 GitHub，直接传
-
-- 单文件版：`node tools/build-single.mjs` 生成 `背单词.html`（约 7.6 MB，词库内联，双击即用），拖到 Cloudflare 的 *Upload your static files* 即可（更新要手动重传）。
-- 或者把 `node tools/make-dist.mjs` 生成的 `dist/` 目录整个拖进去。
 
 ---
 
