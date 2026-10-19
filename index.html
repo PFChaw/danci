@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>背单词 · 六级</title>
+<link rel="stylesheet" href="css/style.css">
+<script>
+  // 先定主题，避免刷新时闪一下
+  try {
+    var t = localStorage.getItem('dcb-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+</head>
+<body>
+<div class="bg" aria-hidden="true"></div>
+<div id="boot-error" class="banner hidden"></div>
+<div id="no-store" class="banner hidden">当前打开方式不支持本地存储（常见于微信 / WPS / 文件预览），进度关掉就没了。想正常用：把页面放到 https 网址上，或在浏览器里直接打开。</div>
+
+<header class="bar">
+  <div class="stat"><span class="k">今日新学</span><b id="s-new">0/20</b></div>
+  <div class="stat"><span class="k">今日复习</span><b id="s-rev">0</b></div>
+  <div class="stat"><span class="k">待复习</span><b id="s-due">0</b></div>
+</header>
+
+<div class="progress"><i id="prog"></i></div>
+<div class="bookline"><span id="book-name">词库</span><span class="dot">·</span><span id="book-total">0</span> 词</div>
+
+<nav class="tabs">
+  <button class="tab" data-view="home">首页</button>
+  <button class="tab active" data-view="learn">学习</button>
+  <button class="tab" data-view="notebook">生词本<b class="badge" id="nb-count">0</b></button>
+  <button class="tab" data-view="stats">统计</button>
+  <button class="tab" data-view="settings">设置</button>
+</nav>
+
+<main id="view-home" class="home">
+  <section class="home-left">
+    <h1><span class="h1-l1">一个简单的</span><br><span class="h1-l2">背单词工具</span></h1>
+    <p class="sub" id="home-sub">简单几步，选择合适你的方法。</p>
+    <button class="btn-primary" id="btn-start">开始吧！<span class="arw">→</span></button>
+  </section>
+
+  <section class="home-right">
+    <h2>选项</h2>
+    <div class="opts">
+      <div class="optrow">
+        <div class="optmain">
+          <div class="optlabel">我的词数</div>
+          <div class="optsub" id="opt-words">已学 0 词</div>
+        </div>
+        <button class="arrow-btn" data-go="stats" aria-label="我的词数">→</button>
+      </div>
+      <div class="optrow">
+        <div class="optmain">
+          <div class="optlabel">生词本</div>
+          <div class="optsub" id="opt-notebook">0 个词</div>
+        </div>
+        <button class="arrow-btn" data-go="notebook" aria-label="生词本">→</button>
+      </div>
+      <div class="optrow">
+        <div class="optmain">
+          <div class="optlabel">设置</div>
+          <div class="optsub" id="opt-settings">词书 · 六级核心</div>
+        </div>
+        <button class="arrow-btn" data-go="settings" aria-label="设置">→</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<main id="view-onb-book" class="onb hidden">
+  <div class="inner">
+    <h1>选一本词书</h1>
+    <p class="sub">先定个范围，之后随时能在设置里换。</p>
+    <div class="pickgrid" id="onb-books"></div>
+    <div class="onb-foot">
+      <button class="btn-primary" id="onb-book-next">下一步<span class="arw">→</span></button>
+    </div>
+  </div>
+</main>
+
+<main id="view-onb-size" class="onb hidden">
+  <div class="inner">
+    <h1>每天学多少</h1>
+    <p class="sub">一天一组。嫌慢以后随时能改。</p>
+    <div class="pickgrid" id="onb-sizes"></div>
+    <div class="onb-foot">
+      <button class="btn-primary" id="onb-size-next">下一步<span class="arw">→</span></button>
+    </div>
+  </div>
+</main>
+
+<main id="view-onb-welcome" class="onb welcome hidden">
+  <div class="inner">
+    <h1>欢迎</h1>
+    <div class="onb-foot">
+      <button class="btn-primary" id="onb-enter">进入<span class="arw">→</span></button>
+    </div>
+  </div>
+</main>
+
+<main id="view-learn" class="card">
+  <div class="roundbar">
+    <span id="round-label">第 1 轮</span>
+    <span class="roundhint" id="round-hint"></span>
+  </div>
+
+  <div class="wordline">
+    <h1 id="w-word">—</h1>
+    <button id="btn-say" class="ghost" title="朗读">🔊</button>
+  </div>
+  <div class="phonetic" id="w-phon"></div>
+  <div class="dots" id="w-dots"></div>
+
+  <section id="panel-choice" class="panel hidden">
+    <div class="choices" id="choices"></div>
+  </section>
+
+  <section id="panel-self" class="panel hidden">
+    <div class="answers">
+      <button class="ans know" data-a="know">认识<small>1</small></button>
+      <button class="ans fuzzy" data-a="fuzzy">模糊<small>2</small></button>
+      <button class="ans unknown" data-a="unknown">不认识<small>3</small></button>
+    </div>
+  </section>
+
+  <section id="panel-spell" class="panel hidden">
+    <p class="trans-big" id="spell-trans"></p>
+    <input id="spell-input" class="spell-input" autocomplete="off" autocapitalize="off"
+           autocorrect="off" spellcheck="false" placeholder="凭记忆输入英文单词">
+    <div class="spell-row">
+      <button class="ans next" id="btn-spell">提交<small>回车</small></button>
+      <button class="ghost" id="btn-spell-skip">跳过</button>
+    </div>
+  </section>
+
+  <section id="panel-review" class="panel hidden">
+    <div class="answers">
+      <button class="ans know" data-a="know">认识<small>1</small></button>
+      <button class="ans fuzzy" data-a="fuzzy">模糊<small>2</small></button>
+      <button class="ans unknown" data-a="unknown">不认识<small>3</small></button>
+    </div>
+  </section>
+
+  <section id="fb" class="fb hidden">
+    <p id="fb-text"></p>
+    <div class="reveal">
+      <p class="trans" id="w-trans"></p>
+      <p class="example" id="w-ex"></p>
+      <p class="example-cn" id="w-excn"></p>
+    </div>
+    <div class="flags">
+      <button class="ghost" id="btn-star">标熟</button>
+      <button class="ghost" id="btn-note">加入生词本</button>
+      <span class="hint" id="w-meta"></span>
+    </div>
+    <section class="answers">
+      <button class="ans next" id="btn-next">下一个<small>空格</small></button>
+    </section>
+  </section>
+
+  <p class="tip" id="tip">一组词一起点三个点：三选一 → 纯回想 → 拼写。整组都过这一轮，才进下一轮。</p>
+</main>
+
+<main id="view-notebook" class="card hidden">
+  <h2>生词本 <span class="sub" id="nb-sub">0 词</span></h2>
+  <p class="tip nb-tip">答错的词会自动进来；<b>在这里或日常复习里累计答对 3 次</b>就自动移出。</p>
+  <button class="ans next" id="btn-nb-study">开始复习生词本<small>随时可练</small></button>
+  <div class="nbtools">
+    <label class="nbcheck"><input type="checkbox" id="nb-all"><span>全选</span></label>
+    <button class="ghost" id="btn-nb-del" disabled>删除选中</button>
+    <button class="ghost danger" id="btn-nb-clear" disabled>清空全部</button>
+  </div>
+  <ul class="nblist" id="nb-list"></ul>
+  <p class="tip hidden" id="nb-empty">生词本还是空的。学习时答错的词会出现在这里。</p>
+</main>
+
+<main id="view-stats" class="card hidden">
+  <h2>统计</h2>
+  <div class="grid" id="st-grid"></div>
+  <h3>最近 7 天作答</h3>
+  <div class="bars" id="st-bars"></div>
+  <h3>学习进度（点亮几轮）</h3>
+  <div class="grid" id="st-states"></div>
+</main>
+
+<main id="done" class="card hidden">
+  <h2 id="done-title">今天的任务做完了 🎉</h2>
+  <p class="tip" id="done-detail"></p>
+  <section class="answers">
+    <button class="ans next" id="btn-done-more">去生词本看看<small>或按 2 号页签</small></button>
+  </section>
+</main>
+
+<main id="view-settings" class="card hidden">
+  <h2>设置</h2>
+
+  <h3>词书</h3>
+  <div class="booklist" id="book-list"></div>
+  <p class="tip nb-tip">换词书只改「新词从哪一本抽」；已经学过的词照样进复习队列，<b>进度不会丢</b>。</p>
+
+  <h3>每组新词</h3>
+  <div class="rowline">
+    <input id="npd-input" class="num" type="number" min="1" max="200" step="5" value="20">
+    <button class="ghost" id="btn-npd">保存</button>
+    <span class="hint" id="npd-hint"></span>
+  </div>
+  <p class="tip nb-tip">一天学一组。组内所有词都点亮第 1 个点，才进第 2 轮；三点点亮即进复习队列。</p>
+
+  <h3>主题色</h3>
+  <div class="swatches" id="swatches"></div>
+  <div class="huebar">
+    <input id="hue" type="range" min="0" max="360" step="1" value="152" aria-label="主题色相">
+    <span class="hueval" id="hue-val">152°</span>
+  </div>
+  <div class="rowline">
+    <span class="hint">背景</span>
+    <div class="seg" id="bg-seg">
+      <button class="segbtn" data-bg="tint">跟随主题</button>
+      <button class="segbtn" data-bg="plain">纯黑 / 纯白</button>
+    </div>
+    <button class="ghost" id="btn-accent-reset">恢复默认</button>
+  </div>
+  <p class="tip nb-tip">只改高亮色和背景光晕，深浅两套各自保留；选「纯黑 / 纯白」就没有彩色光晕。</p>
+
+  <h3>外观</h3>
+  <div class="seg" id="theme-seg">
+    <button class="segbtn" data-theme="dark">深色</button>
+    <button class="segbtn" data-theme="light">浅色</button>
+  </div>
+  <p class="tip nb-tip">深色和浅色用同一套主题色，只换底色和文字色。</p>
+
+  <h3>数据</h3>
+  <div class="rowline">
+    <button class="ghost" id="btn-export">导出进度</button>
+    <button class="ghost" id="btn-import">导入进度</button>
+    <button class="ghost danger" id="btn-reset">清空进度</button>
+    <input type="file" id="file-import" accept=".json,application/json" hidden>
+  </div>
+  <p class="tip nb-tip">进度存在<b>这台设备的浏览器</b>里（不上传任何服务器）。换设备用导出的 JSON 导入即可。</p>
+
+  <h3>关于</h3>
+  <p class="tip nb-tip">学习三轮：① 看英文选中文 ② 看英文纯回想 ③ 看中文拼英文；整组同步推进。学完进复习队列，
+    间隔 1 / 2 / 4 / 7 / 15 天，五次都过就掌握。<br>
+    词库来自 ECDICT（MIT），例句来自 Tatoeba（CC-BY 2.0 FR）。</p>
+</main>
+
+<div id="toast" class="toast hidden"></div>
+
+<div class="modal hidden" id="modal">
+  <div class="modal-card">
+    <p id="modal-text">确定吗？</p>
+    <div class="modal-btns">
+      <button class="ghost" id="modal-cancel">取消</button>
+      <button class="btn-danger" id="modal-ok">确定</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
+
+
+

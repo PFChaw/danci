@@ -1,0 +1,17 @@
+# 依赖与构建产物
+node_modules/
+
+# 构建产物（由 node tools/make-dist.mjs 生成，Cloudflare 会在部署时现做）
+dist/
+dist-single/
+
+# 单文件离线版（体积大，需要时本地生成）
+背单词.html
+背单词-*.html
+*.zip
+
+# 本地产物
+shots/
+*.log
+.DS_Store
+Thumbs.db
